@@ -1,0 +1,54 @@
+<!-- Include stylesheet -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<style>
+.spbox 
+{ width: 100%; height: 100%; border: 1px solid black; 
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 22px;
+  line-height: 30;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+</style>
+
+<!-- Create the editor container -->
+<div class="spbox" id="editor">
+</div>
+<div id="status"></div>
+<!-- Include the Quill library -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<!-- Initialize Quill editor -->
+<script>
+
+<!-- Some may not like the toolbar or formatted text with the scratchpad. -->
+<!-- Both versions are here, the top is pure text, the bottom is formatted -->
+  //var quill = new Quill('#editor', { theme: 'snow' , modules: {"toolbar": false} } );
+  var quill = new Quill('#editor', { theme: 'snow' });
+  
+<!-- Keeping a small scratchpad of text in localStorage -->
+  //quill.setText(localStorage.getItem('scratchpad'));
+  quill.setContents(JSON.parse(localStorage.getItem('scratchpad')));
+
+<!-- A dirty flag set whenever the change signal comes -->
+  var changed = 0;
+  quill.on('text-change', function(delta, oldDelta, source) { if (source=='user') changed=1; });
+  
+<!-- Every 5 seconds write the current contents if it has changed -->
+  var tmr = setInterval(timerHandler, 5000);
+  function timerHandler() 
+  { if (changed==1) 
+    { //localStorage.setItem('scratchpad', quill.getText());
+      localStorage.setItem('scratchpad', JSON.stringify(quill.getContents()));
+      changed=0;
+    }
+  }
+
+<!-- Force a save on exit by calling the timerHandler directly -->
+  window.addEventListener('unload', function(event) 
+  { clearInterval(tmr);
+    timerHandler();
+  });
+  
+</script>

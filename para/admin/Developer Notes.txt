@@ -1,0 +1,32 @@
+# -------------------------------------------------------------------------
+# Paragraphs
+# -------------------------------------------------------------------------
+
+A set of tools to gather and organize research quotations.
+
+The final architecture will include 
+
+1. a relational or document database (probably Postgres),
+2. a web service via node.js, and
+3. a client side single page application written in Javascript. 
+
+The single-page HTML client-side application written in Javascript. 
+It will include a module para-cli.js that will encapsulate the real-time
+data managenent efforts. A temporary version of para-cli.js will 
+simulate the server database to facilitate development and testing of 
+the client-side app without requiring a functioning and available 
+server-side application.
+
+Entities:
+
+E1. Paragraph: (pid), [wid], [wloc], title, para, notes, tags, [parent], [dttm] 
+
+E2. Author: (aid), name
+
+E3. Work: (wid), [aid], title, tags
+
+E4. Tags: [tag] - NOT MANAGED WITH UI
+
+# -------------------------------------------------------------------------
+# EOF
+# -------------------------------------------------------------------------

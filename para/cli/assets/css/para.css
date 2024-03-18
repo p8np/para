@@ -1,0 +1,226 @@
+/* ----------------------------------------------------------- */
+/* */
+/* */
+/* */
+/* */
+/* */
+/* */
+/* */
+/* */
+/* ----------------------------------------------------------- */
+
+
+
+/* ----------------------------------------------------------- */
+/* List Controls - Standard */
+/* ----------------------------------------------------------- */
+
+.p-list-group
+{ margin-top: 10px;
+}
+
+.p-list-item
+{ margin-top: 5px;
+}
+
+/* ----------------------------------------------------------- */
+/* Tag Containers */
+/* ----------------------------------------------------------- */
+
+.p-tag-cont-set, .p-tag-cont-unset
+{ height:150px;
+  overflow-y: scroll;
+}
+
+.p-tag-cont-unset
+{ height:180px;
+}
+
+/* ----------------------------------------------------------- */
+/* Tags: are either set or unset (as of now). */
+/* ----------------------------------------------------------- */
+
+.p-tag-unset, .p-tag-set
+{ margin-right: 8px;
+  border-radius: 16px;
+  margin-top: 8px;
+}
+
+.p-tag-unset
+{ background-color: deepskyblue;
+}
+
+/* ----------------------------------------------------------- */
+/* ----------------------------------------------------------- */
+/* ----------------------------------------------------------- */
+/* ----------------------------------------------------------- */
+/* ----------------------------------------------------------- */
+/* ----------------------------------------------------------- */
+
+#editor 
+{ width: 100%; height: 100%; border: 1px solid black; 
+  font-family: charter, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 21px;
+  line-height: 32;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+ 
+
+
+
+.TS-rem-tag 
+{ margin: 3px;
+}
+
+.TS-add-tag 
+{ background-color: deepskyblue;
+  margin: 3px;
+}
+
+.tagset 
+{ border-width: 4px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  border-color: var(--bs-blue);
+}
+
+.tag 
+{ margin-right: 10px;
+  border-radius: 16px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.tag-group 
+{ margin-top: 15px;
+  border-style: solid;
+  border-color: var(--bs-blue);
+}
+
+
+
+
+.taget 
+{
+  padding-bottom: 12px;
+  border-width: 4px;
+  border-color: var(--bs-pink);
+}
+
+
+.p-item-label {
+  margin-left: 24px;
+  background-color: inherit;
+  color: inherit;
+  border: none;
+}
+
+.filter-drop {
+  width: initial;
+  margin-right: 20px;
+  margin-top: 10px;
+}
+
+#p-attrs {
+}
+
+.selector-cont {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#add-p {
+  margin-left: 24px;
+}
+
+.p-but {
+  margin-right: 24px;
+  margin-top: 20px;
+}
+
+.list-but {
+  margin-left: 15px;
+}
+
+#plnk-cont {
+  display: initial;
+}
+
+#p-lnks {
+  display: initial;
+}
+
+.add-tag-cont {
+  margin-top: 15px;
+  margin-bottom: 4px;
+}
+
+#p-tags-poss {
+  margin-top: 8px;
+}
+
+#add-tag-cont {
+}
+
+.tags-inp {
+  width: 250px;
+  margin-right: 20px;
+  font-size: 18pt;
+}
+
+#bn-add-tag {
+}
+
+#e-bn-exit {
+}
+
+#edit-bn-cont {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#p-tags-poss {
+  margin-top: 8px;
+}
+
+#s-ac-tags-cont {
+}
+
+.tags-inp-cont {
+  margin-top: 25px;
+  display: flex;
+}
+
+#p-bn-add {
+  margin: 0px;
+}
+
+.dlg-form {
+  max-width: 600px;
+  width: 100%;
+}
+
+.dlg-outer {
+  display: flex;
+  /*justify-content: center;*/
+}
+
+#page-stack {
+}
+
+#page-search {
+  padding-top: 5em;
+}
+
+#page-edit {
+  padding-top: 5em;
+}
+
+#s-keyword-inp {
+  width: 300px;
+}
+
+
+/* @end */
