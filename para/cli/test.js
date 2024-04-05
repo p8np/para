@@ -25,7 +25,6 @@ var run_test = function()
   var cmd_pos=0;
   var run_flag=false;
   
-  var i_para_list = null;
   var i_search_tags = [ 'tag1', 'tag2' ];
   var i_cur_pid = 5;
   var i_cur_para = null;
@@ -51,18 +50,39 @@ var run_test = function()
         cmd_pos++; run_flag=true; // run next command!
       }); break;
   
-      case 3 : p.a_paraSearch('filter-not-yet', i_search_tags, 100, function(result, output)
+      case 3 : p.a_paraSearch({ "filter":"@stack" }, 100, function(result, output)
       { console.log('PARA_SEARCH: ' + result + ' OUTPUT: ' + JSON.stringify(output));
-        i_para_list = JSON.parse(JSON.stringify(output));
         cmd_pos++; run_flag=true; // run next command!
       }); break;
   
-      case 4 : p.a_paraGet(i_cur_pid, function(result, output)
+      case 4 : p.a_paraSearch({ "filter":"@recent" }, 100, function(result, output)
+      { console.log('PARA_SEARCH: ' + result + ' OUTPUT: ' + JSON.stringify(output));
+        cmd_pos++; run_flag=true; // run next command!
+      }); break;
+
+      case 5 : p.a_paraSearch({ "filter":"@tags", "tags": i_search_tags }, 100, function(result, output)
+      { console.log('PARA_SEARCH: ' + result + ' OUTPUT: ' + JSON.stringify(output));
+        cmd_pos++; run_flag=true; // run next command!
+      }); break;
+
+      case 6 : p.a_paraSearch({ "filter":"@works", "wids": [2,3] }, 100, function(result, output)
+      { console.log('PARA_SEARCH: ' + result + ' OUTPUT: ' + JSON.stringify(output));
+        cmd_pos++; run_flag=true; // run next command!
+      }); break;
+
+      case 7 : p.a_paraSearch({ "filter":"@text", "text": "spiritual" }, 100, function(result, output)
+      { console.log('PARA_SEARCH: ' + result + ' OUTPUT: ' + JSON.stringify(output));
+        cmd_pos++; run_flag=true; // run next command!
+      }); break;
+
+      case 8 : p.a_paraGet(i_cur_pid, function(result, output)
       { console.log('PARA_GET: ' + result + ' OUTPUT: ' + JSON.stringify(output));
         i_cur_para = JSON.parse(JSON.stringify(output));
         cmd_pos++; run_flag=true; // run next command!
       }); break;
   
+      
+
      /*
       case 5 : p.a_paraCreate(i_new_title, i_cur_wid, function(result, output)
       { console.log('PARA_CREATE: ' + result + ' OUTPUT: ' + output);
@@ -71,7 +91,7 @@ var run_test = function()
       }); break;
      */
   
-      case 5 : cmd_pos=1000; 
+      default : cmd_pos=1000; 
     }
     console.log('COMMAND COMPLETE.');
   }

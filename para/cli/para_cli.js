@@ -17,6 +17,45 @@
 //
 // rf means function to be called when the function complets
 //
+// 4/3/24 - Added "recent" and "stack" to data
+//        - Added some crude paraSearch simulations.
+// 
+//   Filters:
+//   - Recent: { "filter": "@recent" }
+//   - Stack:  { "filter": "@stack" }
+//   - Tags:   { "filter": "@tags", "tags":[<array of strings, one per tag>] }
+//   - Work:   { "filter": "@works", "wids":[<array of wids]" }
+//   - Text:   { "filter": "@text", "text":"<string>" }
+//
+//------------------------------------------------------------------------
+//
+// PUBLIC FUNCTIONS (see comments at implementation for details):
+//
+// a_login - set the user
+// a_logout - clear the user
+// a_initialize - initialize the library
+// a_paraSearch - return a set of paragraph headers for the listview
+// a_paraGet - get the details of a paragraph
+// a_paraCreate - create a new paragraph
+// a_paraDelete - delete a paragraph
+// a_paraUpdateMeta - modify the meta-data fields for a paragraph
+// a_paraUpdateText - modify the paragraph text
+// a_paraUpdateNotes - modify the note text for a paragraph
+// a_paraAddTag - add a tag to a paragraph
+// a_paraRemoveTag - remove a tag from a paragraph
+// a_stackPush - add a set of paragraph(pids) to the working stack
+// a_stackPop - remove a set of paragraph(pids) from the working stack
+// a_stackClear - clear the working stack
+// a_authSearch - find an author by text
+// a_authCreate - create an author
+// a_authDelete - delete an author
+// a_authUpdate - modify an author
+// a_workSearch - find a work
+// a_workCreate - create a work
+// a_workDelete - delete a work
+// a_workUpdate - modify a work
+// dbg_reset - reset the data-storage to the testing dataset.
+//
 //------------------------------------------------------------------------
 
 var para = function()
@@ -27,11 +66,85 @@ var para = function()
   // Privates
   //***********************************************************************
 
-  var pv_auths = [];
-  var pv_paras = [];
-  var pv_works = [];
-  var pv_tags = [];
- 
+  var pv_db_version = 1;
+  var pv_auths = null;
+  var pv_paras = null;
+  var pv_works = null;
+  var pv_tags = null;
+  var pv_recents = null;
+  var pv_stack = null;  
+  var i_para_test_data = null; 
+
+  //------------------------------------------------------------------------
+  var p_remove_from_recents = function(pid)
+  { var l=pv_recents.length;
+    pv_recents.filter(function(p) { return p!==pid; });
+    if (pv_recents.length!=l) window.localStorage.setItem("Para.Recents", JSON.stringify(pv_recents));
+  }
+
+  //------------------------------------------------------------------------
+  var p_add_to_recents = function(pid)
+  { pv_recents.filter(function(p) { return p!==pid; });
+    pv_recents.unshift(pid);
+    window.localStorage.setItem("Para.Recents", JSON.stringify(pv_recents));
+  }
+
+  //------------------------------------------------------------------------
+  var p_remove_from_stack = function(pid)
+  { var l=pv_stack.length;
+    if (pid==-1) pv_stack.splice(0,1);
+    else pv_stack.filter(function(p) { return p!==pid; });
+    if (pv_stack.length!=l) window.localStorage.setItem("Para.Stack", JSON.stringify(pv_stack));
+  }
+
+  //------------------------------------------------------------------------
+  var p_add_to_stack = function(pid)
+  { pv_stack.filter(function(p) { return p!==pid; });
+    pv_stack.unshift(pid);
+    window.localStorage.setItem("Para.Stack", JSON.stringify(pv_stack));
+  }
+  
+  //------------------------------------------------------------------------
+  var p_clear_stack = function()
+  { pv_stack=[];
+    window.localStorage.setItem("Para.Stack", JSON.stringify(pv_stack));
+  }
+
+  //------------------------------------------------------------------------
+  var p_db_write_paras = function()
+  { window.localStorage.setItem("Para.Paragraphs", JSON.stringify(pv_paras));
+  }
+
+  //------------------------------------------------------------------------
+  var p_db_reset = function()
+  { window.localStorage.setItem("Para.DBVer", pv_db_version);
+    window.localStorage.setItem("Para.Paragraphs", JSON.stringify(i_para_test_data.paras));
+    window.localStorage.setItem("Para.Auths",   JSON.stringify(i_para_test_data.authors));
+    window.localStorage.setItem("Para.Works",   JSON.stringify(i_para_test_data.works));
+    window.localStorage.setItem("Para.Tags", JSON.stringify(i_para_test_data.tags));
+    window.localStorage.setItem("Para.Recents", JSON.stringify(i_para_test_data.recents));
+    window.localStorage.setItem("Para.Stack", JSON.stringify(i_para_test_data.stack));
+  }
+
+  //------------------------------------------------------------------------
+  var p_db_load = function()
+  { pv_auths=pv_works=pv_tags=pv_paras=pv_recents=pv_stack=null;
+    var res=window.localStorage.getItem("Para.DBVer");
+    if (res==null) p_db_reset(); 
+    var db_version = JSON.parse(window.localStorage.getItem("Para.DBVer"));
+    if (db_version!=pv_db_version) p_db_reset(); 
+    if (db_version==pv_db_version) 
+    { pv_auths   = JSON.parse(window.localStorage.getItem("Para.Auths"));
+      pv_works   = JSON.parse(window.localStorage.getItem("Para.Works"));
+      pv_paras   = JSON.parse(window.localStorage.getItem("Para.Paragraphs"));
+      pv_tags    = JSON.parse(window.localStorage.getItem("Para.Tags"));
+      pv_recents = JSON.parse(window.localStorage.getItem("Para.Recents"));
+      pv_stack   = JSON.parse(window.localStorage.getItem("Para.Stack"));
+      return true;
+    }
+    return false;
+  }
+
   //------------------------------------------------------------------------
   var p_find_tag = function(tag)
   { for (var i=0;i<pv_tags.length;i++) 
@@ -73,15 +186,8 @@ var para = function()
   //------------------------------------------------------------------------
   this.a_initialize = function(rf)
   { var deferred = $.Deferred();
-    pv_auths = JSON.parse(window.localStorage.getItem("Auths"));
-    pv_works = JSON.parse(window.localStorage.getItem("Works"));
-    pv_paras = JSON.parse(window.localStorage.getItem("Paragraphs"));
-    pv_tags  = JSON.parse(window.localStorage.getItem("Tags"));
-    if (pv_auths==null) pv_auths=i_auths;
-    if (pv_works==null) pv_works=i_works;
-    if (pv_paras==null) pv_paras=i_paras;
-    if (pv_tags==null) pv_tags=i_tags;
-    rf(true);
+    var res=p_db_load();
+    rf(res);
     deferred.resolve();
     return deferred.promise();
   }
@@ -89,12 +195,47 @@ var para = function()
   //-----------------------------------------------------------------------
   // ASYNC: For testing: ignore filter/tags/max and return all
   // -> [{pid, title}] :: a list of paragraphs matching search filter
-  // FOR NOW just return all pids
   //-----------------------------------------------------------------------
-  this.a_paraSearch = function(filt, tags, max, rf) 
-  { var deferred = $.Deferred(); 
-    var tmp = [];
-    for (var i=0;i<pv_paras.length;i++) tmp.push({ "pid": pv_paras[i].pid, "title": pv_paras[i].title });
+  this.a_paraSearch = function(filt, max, rf) 
+  { var deferred = $.Deferred();  
+    var pids = [];
+
+    if (filt.filter==="@recent") pids=pv_recents;
+
+    if (filt.filter==="@stack") pids=pv_stack;
+
+    if (filt.filter==="@works") 
+      for (var j=0;j<filt.wids.length;j++)
+        for (var i=0;i<pv_paras.length;i++) 
+          if (pv_paras[i].wid==filt.wids[j]) pids.push(pv_paras[i].pid);
+       
+    // for testing we will match any para that contains any of the filter.tags.
+    // in real code only get paras that contain all tags.
+    if (filt.filter==="@tags") 
+    { for (var j=0;j<filt.tags.length;j++)
+      { for (var i=0;i<pv_paras.length;i++) 
+        { var found=false;
+          for (var k=0;((found==false)&&(k<pv_paras[i].tags.length));k++) 
+            if (pv_paras[i].tags[k]===filt.tags[j]) found=true;
+          if (found==true) pids.push(pv_paras[i].pid);
+        }  
+      }
+    }
+
+    if (filt.filter==="@text") 
+    { var lc_text=filt.text.toLowerCase();
+      for (var i=0;i<pv_paras.length;i++) 
+        if (pv_paras[i].text.indexOf(lc_text)!=-1) pids.push(pv_paras[i].pid); 
+    }
+
+    // create results, make sure there are no duplicates...
+    var upids = Array.from(new Set(pids));
+    var tmp=[];
+    for (var i=0;i<upids.length;i++)
+    { var pos=p_find_para(upids[i]);
+      if (pos!=-1) tmp.push({ "pid": pv_paras[i].pid, "title": pv_paras[i].title });
+    }
+
     rf(true, tmp); 
     deferred.resolve(); 
     return deferred.promise(); 
@@ -108,7 +249,8 @@ var para = function()
   { var deferred = $.Deferred(); 
     var pos=p_find_para(pid);
     if (pos==-1) rf(false, {});
-    else rf(true, pv_paras[pos]); 
+    var tmp = { "pid": pv_paras[pos].pid, "wid": pv_paras[pos].wid, "title": pv_paras[pos].title, "wloc": pv_paras[pos].wloc, "text": pv_paras[pos].text, "notes": pv_paras[pos].notes, "tags": pv_paras[pos].tags };
+    rf(true, tmp); 
     deferred.resolve(); 
     return deferred.promise(); 
   }
@@ -121,8 +263,9 @@ var para = function()
   { var deferred = $.Deferred(); 
     var next_pid=0; 
     for (var i=0;i<pv_paras.length;i++) if (pv_paras[i].pid>next_pid) next_pid=pv_paras[i].pid; 
-    pv_paras.push({ "pid": ++next_pid, "wid": wid, "title": title, "text": ""});
-    window.localStorage.setItem("Paragraphs", pv_paras);
+    pv_paras.push({ "pid": ++next_pid, "wid": wid, "wloc":"", "title": title, "text": "", "tags":[]});
+    p_add_to_recents(next_pid);
+    p_db_write_paras();
     rf(true, next_pid); 
     deferred.resolve(); 
     return deferred.promise(); 
@@ -137,7 +280,9 @@ var para = function()
     if (pos==-1) rf(false);    
     else 
     { pv_paras.splice(pos, 1);    
-      window.localStorage.setItem("Paragraphs", pv_paras);
+      p_remove_from_stack(pid);
+      p_remove_from_recents(pid);
+      p_db_write_paras();
       rf(true); 
     }
     deferred.resolve(); 
@@ -153,9 +298,10 @@ var para = function()
     var pos=p_find_para(pid);
     if (pos==-1) rf(false);    
     else
-    { if (title!=null) pv_paras[pos].title=title;
+    { p_add_to_recents(pid);
+      if (title!=null) pv_paras[pos].title=title;
       if ((wid!=null)&&(wid>=0)) pv_paras[pos].wid=wid;
-      window.localStorage.setItem("Paragraphs", pv_paras);
+      p_db_write_paras();
       rf(true); 
     }
     deferred.resolve(); 
@@ -168,12 +314,13 @@ var para = function()
   //-----------------------------------------------------------------------
   this.a_paraUpdateText = function(pid, text, rf) 
   { var deferred = $.Deferred(); 
-    if (txt==null) txt="";
+    if (text==null) text="";
     var pos=p_find_para(pid);
     if (pos==-1) rf(false);    
     else
-    { pv_paras[pos].txt=txt;
-      window.localStorage.setItem("Paragraphs", pv_paras);
+    { p_add_to_recents(pid);
+      pv_paras[pos].text=text;
+      p_db_write_paras();
       rf(true); 
     }
     deferred.resolve(); 
@@ -186,12 +333,13 @@ var para = function()
   //-----------------------------------------------------------------------
   this.a_paraUpdateNotes = function(pid, note, rf) 
   { var deferred = $.Deferred(); 
-    if (note==null) txt="";
+    if (note==null) text="";
     var pos=p_find_para(pid);
     if (pos==-1) rf(false);    
     else
-    { pv_paras[pos].note=note;
-      window.localStorage.setItem("Paragraphs", pv_paras);
+    { p_add_to_recents(pid);
+      pv_paras[pos].note=note;
+      p_db_write_paras();
       rf(true); 
     }
     deferred.resolve(); 
@@ -210,13 +358,14 @@ var para = function()
     { var tpos=pv_paras[pos].tags.indexOf(tag);
       if (tpos!=-1) rf(false); // tag is present
       else
-      { pv_paras[pos].tags.push(tag);
+      { p_add_to_recents(pid);
+        pv_paras[pos].tags.push(tag);
         var tp = p_find_tag(tag);
         if (tp==-1) 
         { pv_tags.push(tag);
-          window.localStorage.setItem("Tags", pv_tags);
+          window.localStorage.setItem("Para.Tags", pv_tags);
         }
-        window.localStorage.setItem("Paragraphs", pv_paras);
+        p_db_write_paras();
         rf(true); 
       }
     }
@@ -236,11 +385,48 @@ var para = function()
     { var tpos=pv_paras[pos].tags.indexOf(tag);
       if (tpos==-1) rf(false); // tag is NOT present
       else
-      { pv_paras[pos].tags.splice(tpos, 1);
-        window.localStorage.setItem("Paragraphs", pv_paras);
+      { p_add_to_recents(pid);
+        pv_paras[pos].tags.splice(tpos, 1);
+        p_db_write_paras();
         rf(true); 
       }
     }
+    deferred.resolve(); 
+    return deferred.promise(); 
+  }
+
+  //-----------------------------------------------------------------------
+  // ASYNC: 
+  //:: Push an array of pids onto the stack
+  //-----------------------------------------------------------------------
+  this.a_stackPush = function(pids) 
+  { var deferred = $.Deferred(); 
+    for (var i=0;i<pids.length;i++) p_add_to_stack(pids[i]);
+    rf(true); 
+    deferred.resolve(); 
+    return deferred.promise(); 
+  }
+
+  //-----------------------------------------------------------------------
+  // ASYNC: If pids is empty, remove the top para
+  //:: Pop a set of pids from the stack. The stack must be renumbered
+  //-----------------------------------------------------------------------
+  this.a_stackPop = function(pids) 
+  { var deferred = $.Deferred(); 
+    for (var i=0;i<pids.length;i++) p_remove_from_stack(pids[i]);
+    rf(true); 
+    deferred.resolve(); 
+    return deferred.promise(); 
+  }
+
+  //-----------------------------------------------------------------------
+  // ASYNC: 
+  //:: Clear the stack
+  //-----------------------------------------------------------------------
+  this.a_stackClear = function(pids) 
+  { var deferred = $.Deferred(); 
+    p_clear_stack();
+    rf(true); 
     deferred.resolve(); 
     return deferred.promise(); 
   }
@@ -265,7 +451,7 @@ var para = function()
     var next_aid=0; 
     for (var i=0;i<pv_auths.length;i++) if (pv_auths[i].aid>next_aid) next_aid=pv_auths[i].aid; 
     pv_auths.push({ "aid": ++next_aid, "name": name });
-    window.localStorage.setItem("Auths", pv_auths);
+    window.localStorage.setItem("Para.Auths", pv_auths);
     rf(true, next_aid); 
     deferred.resolve(); 
     return deferred.promise(); 
@@ -273,6 +459,7 @@ var para = function()
 
   //-----------------------------------------------------------------------
   // ASYNC: delete an author
+  // HOW TO DEAL WITH ORPHAN WORKS and PARAs
   //-----------------------------------------------------------------------
   this.a_authDelete = function(aid, rf)
   { var deferred = $.Deferred(); 
@@ -280,7 +467,7 @@ var para = function()
     if (pos==-1) rf(false);    
     else 
     { pv_auths.splice(pos, 1);    
-      window.localStorage.setItem("Auths", pv_auths);
+      window.localStorage.setItem("Para.Auths", pv_auths);
       rf(true); 
     }
     deferred.resolve(); 
@@ -296,7 +483,7 @@ var para = function()
     if (pos==-1) rf(false);    
     else 
     { pv_auths[pos].name=name;    
-      window.localStorage.setItem("Auths", pv_auths);
+      window.localStorage.setItem("Para.Auths", pv_auths);
       rf(true); 
     }
     deferred.resolve(); 
@@ -323,7 +510,7 @@ var para = function()
     var next_wid=0; 
     for (var i=0;i<pv_works.length;i++) if (pv_works[i].wid>next_wid) next_wid=pv_works[i].wid; 
     pv_works.push({ "wid": ++next_wid, "title": title, "aid": aid });
-    window.localStorage.setItem("Works", pv_works);
+    window.localStorage.setItem("Para.Works", pv_works);
     rf(true, next_wid); 
     deferred.resolve(); 
     return deferred.promise(); 
@@ -331,6 +518,7 @@ var para = function()
 
   //-----------------------------------------------------------------------
   // ASYNC: delete a work
+  // HOW TO DEAL WITH ORPHAN PARAs
   //-----------------------------------------------------------------------
   this.a_workDelete = function(wid, rf)
   { var deferred = $.Deferred(); 
@@ -338,7 +526,7 @@ var para = function()
     if (pos==-1) rf(false);    
     else 
     { pv_works.splice(pos, 1);    
-      window.localStorage.setItem("Works", pv_works);
+      window.localStorage.setItem("Para.Works", pv_works);
       rf(true); 
     }
     deferred.resolve(); 
@@ -355,7 +543,7 @@ var para = function()
     else 
     { if (title) pv_works[pos].title=title;
       if (aid) pv_works[pos].aid=aid;    
-      if ((aid)||(title)) window.localStorage.setItem("Works", pv_works);
+      if ((aid)||(title)) window.localStorage.setItem("Para.Works", pv_works);
       rf(true); 
     }
     deferred.resolve(); 
@@ -366,18 +554,11 @@ var para = function()
   //-----------------------------------------------------------------------
   //-----------------------------------------------------------------------
 
-  var i_para_test_data = null; 
-
   //-----------------------------------------------------------------------
   //:: clears storage and initializes to initial state
   //-----------------------------------------------------------------------
-  this.dbg_reset = function() 
-  { window.localStorage.setItem("Paragraphs", JSON.stringify(i_para_test_data.paras));
-    window.localStorage.setItem("Auths",   JSON.stringify(i_para_test_data.authors));
-    window.localStorage.setItem("Works",   JSON.stringify(i_para_test_data.works));
-    window.localStorage.setItem("Tags", JSON.stringify(i_para_test_data.tags));
-  }
-
+  this.dbg_reset = function() { p_db_reset(); }
+  
 /*
   //-----------------------------------------------------------------------
   // ASYNC: 
@@ -391,7 +572,7 @@ var para = function()
     if ((pos_src==-1)||(pos_dest==-1)) rf(false); // one or both pids are not valid   
     else
     { pv_paras[pos_dest].concat(pv_paras[pos_src]);
-      window.localStorage.setItem("Paragraphs", pv_paras);
+      window.localStorage.setItem("Para.Paragraphs", pv_paras);
       rf(true); 
     }
     deferred.resolve(); 
@@ -438,6 +619,9 @@ i_para_test_data =
 [ 
   "Jung", "Science", "Sad", "Cat", "Dog"
 ],
+
+"stack": [3,5,7],
+"recents": [2,4,6,8],
 
 "paras": 
 [ 
